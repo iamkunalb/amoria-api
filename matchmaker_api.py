@@ -585,3 +585,7 @@ async def verify_code(data: dict):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("matchmaker_api:app", host="0.0.0.0", port=8000)
