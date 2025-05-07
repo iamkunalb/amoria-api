@@ -16,14 +16,14 @@ from fastapi import Query
 
 app = FastAPI()
 
-# Allow all CORS for now
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://amoria-one.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # MBTI compatibility mapping
 mbti_matches = {
