@@ -7,6 +7,9 @@ WORKDIR /app
 # Copy all project files
 COPY . .
 
+RUN mkdir -p /secrets
+COPY secrets/firebase.json /secrets/firebase.json
+
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
