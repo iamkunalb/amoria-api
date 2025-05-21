@@ -336,60 +336,113 @@ def calculate_mutual_match(user_a: Dict, user_b: Dict) -> float:
         return (score_ab + score_ba) / 2  # Average the scores
     return 0.0
 
+# @app.get("/match-rounds")
+# def generate_match_rounds():
+#     users_ref = db.collection("users")
+#     docs = users_ref.stream()
+#     users = {doc.id: doc.to_dict() for doc in docs}
+
+#     mutual_pairs = []
+
+#     # Step 1: Build mutual match pairs
+#     for user_id, user_data in users.items():
+#         for other_id, other_data in users.items():
+#             if user_id == other_id:
+#                 continue
+
+#             score = calculate_mutual_match(user_data, other_data)
+#             if score > 0:
+#                 pair = tuple(sorted([user_id, other_id]))
+#                 if pair not in mutual_pairs:
+#                     mutual_pairs.append(pair)
+
+#     random.shuffle(mutual_pairs)
+
+#     rounds = {"round_1": [], "round_2": [], "round_3": []}
+#     assigned_users = {"round_1": set(), "round_2": set(), "round_3": set()}
+
+#     # Step 2: Distribute mutual pairs without overlap
+#     for a, b in mutual_pairs:
+#         for round_key in rounds:
+#             if a not in assigned_users[round_key] and b not in assigned_users[round_key]:
+#                 match_a = {
+#                     "id": b,
+#                     "score": calculate_mutual_match(users[a], users[b]),
+#                     "name": f"{users[b].get('firstName', '')} {users[b].get('lastName', '')}".strip(),
+#                     "age": users[b].get('age', ''),
+#                     "mbti": users[b].get('mbti', '')
+#                 }
+#                 match_b = {
+#                     "id": a,
+#                     "score": calculate_mutual_match(users[a], users[b]),
+#                     "name": f"{users[a].get('firstName', '')} {users[a].get('lastName', '')}".strip(),
+#                     "age": users[a].get('age', ''),
+#                     "mbti": users[a].get('mbti', '')
+#                 }
+
+#                 rounds[round_key].append({
+#                     a: match_a,
+#                     b: match_b
+#                 })
+
+#                 assigned_users[round_key].update([a, b])
+#                 break  # Go to next pair once assigned
+#             # if conflict, move to next round
+
+#     return rounds
+
 @app.get("/match-rounds")
 def generate_match_rounds():
-    users_ref = db.collection("users")
-    docs = users_ref.stream()
-    users = {doc.id: doc.to_dict() for doc in docs}
+    try:
+        users_ref = db.collection("users")
+        docs = users_ref.stream()
+        users = {doc.id: doc.to_dict() for doc in docs}
 
-    mutual_pairs = []
+        mutual_pairs = []
+        for user_id, user_data in users.items():
+            for other_id, other_data in users.items():
+                if user_id == other_id:
+                    continue
 
-    # Step 1: Build mutual match pairs
-    for user_id, user_data in users.items():
-        for other_id, other_data in users.items():
-            if user_id == other_id:
-                continue
+                score = calculate_mutual_match(user_data, other_data)
+                if score > 0:
+                    pair = tuple(sorted([user_id, other_id]))
+                    if pair not in mutual_pairs:
+                        mutual_pairs.append(pair)
 
-            score = calculate_mutual_match(user_data, other_data)
-            if score > 0:
-                pair = tuple(sorted([user_id, other_id]))
-                if pair not in mutual_pairs:
-                    mutual_pairs.append(pair)
+        random.shuffle(mutual_pairs)
 
-    random.shuffle(mutual_pairs)
+        rounds = {"round_1": [], "round_2": [], "round_3": []}
+        assigned_users = {"round_1": set(), "round_2": set(), "round_3": set()}
 
-    rounds = {"round_1": [], "round_2": [], "round_3": []}
-    assigned_users = {"round_1": set(), "round_2": set(), "round_3": set()}
+        for a, b in mutual_pairs:
+            for round_key in rounds:
+                if a not in assigned_users[round_key] and b not in assigned_users[round_key]:
+                    match_a = {
+                        "id": b,
+                        "score": calculate_mutual_match(users[a], users[b]),
+                        "name": f"{users[b].get('firstName', '')} {users[b].get('lastName', '')}".strip(),
+                        "age": users[b].get('age', ''),
+                        "mbti": users[b].get('mbti', '')
+                    }
+                    match_b = {
+                        "id": a,
+                        "score": calculate_mutual_match(users[a], users[b]),
+                        "name": f"{users[a].get('firstName', '')} {users[a].get('lastName', '')}".strip(),
+                        "age": users[a].get('age', ''),
+                        "mbti": users[a].get('mbti', '')
+                    }
 
-    # Step 2: Distribute mutual pairs without overlap
-    for a, b in mutual_pairs:
-        for round_key in rounds:
-            if a not in assigned_users[round_key] and b not in assigned_users[round_key]:
-                match_a = {
-                    "id": b,
-                    "score": calculate_mutual_match(users[a], users[b]),
-                    "name": f"{users[b].get('firstName', '')} {users[b].get('lastName', '')}".strip(),
-                    "age": users[b].get('age', ''),
-                    "mbti": users[b].get('mbti', '')
-                }
-                match_b = {
-                    "id": a,
-                    "score": calculate_mutual_match(users[a], users[b]),
-                    "name": f"{users[a].get('firstName', '')} {users[a].get('lastName', '')}".strip(),
-                    "age": users[a].get('age', ''),
-                    "mbti": users[a].get('mbti', '')
-                }
+                    rounds[round_key].append({a: match_a, b: match_b})
+                    assigned_users[round_key].update([a, b])
+                    break
 
-                rounds[round_key].append({
-                    a: match_a,
-                    b: match_b
-                })
+        return rounds
 
-                assigned_users[round_key].update([a, b])
-                break  # Go to next pair once assigned
-            # if conflict, move to next round
+    except Exception as e:
+        print("🔥 Error in /match-rounds:", str(e))
+        raise HTTPException(status_code=500, detail=f"Match round generation failed: {str(e)}")
 
-    return rounds
 
 
 
