@@ -1,11 +1,8 @@
 import firebase_admin
 from firebase_admin import credentials, firestore
-from firebase_admin import credentials, firestore
 
-cred = credentials.Certificate("/secrets/firebase.json")
+# ✅ Use Cloud Run's built-in identity
+cred = credentials.ApplicationDefault()
 firebase_admin.initialize_app(cred)
-
-# cred = credentials.Certificate("./amoria.json")
-# firebase_admin.initialize_app(cred)
 
 db = firestore.client()
